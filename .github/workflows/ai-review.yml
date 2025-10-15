@@ -67,7 +67,21 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body-file: pr_feedback.md
 
-      # 3️⃣ 執行 pytest 自動測試
+      # 3️⃣ 切換至學生提交版本（PR Head）
+      - name: Checkout PR head
+        if: steps.validate.outputs.validate_result == 'pass'
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: Debug file structure
+        if: steps.validate.outputs.validate_result == 'pass'
+        run: |
+          echo "=== Repository structure ==="
+          ls -R
+
+      # 4️⃣ 執行 pytest 自動測試
       - name: Run pytest
         if: steps.validate.outputs.validate_result == 'pass'
         run: |
@@ -82,7 +96,7 @@ jobs:
           issue-number: ${{ github.event.pull_request.number }}
           body-file: test_results/results.md
 
-      # 4️⃣ AI 程式碼審查（Gemini）
+      # 5️⃣ AI 程式碼審查（Gemini）
       - name: Prepare diff for AI review
         if: steps.validate.outputs.validate_result == 'pass'
         run: |
