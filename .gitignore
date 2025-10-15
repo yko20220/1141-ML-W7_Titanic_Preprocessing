@@ -1,0 +1,18 @@
+# Python 虛擬環境
+venv/
+
+# 系統暫存與中間檔
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 測試結果與臨時輸出
+test_results/
+*.log
+
+# 資料檔案
+data/titanic_processed.csv
+
+# 教師端輔助腳本
+getData.py

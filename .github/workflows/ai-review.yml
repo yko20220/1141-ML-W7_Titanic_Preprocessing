@@ -1,0 +1,136 @@
+name: W7 Titanic - Auto Evaluation
+
+on:
+  pull_request_target:
+    types: [opened, synchronize]
+
+jobs:
+  evaluate_submission:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      # 1️⃣ 取出 PR 檔案列表
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq python3 python3-pip
+          pip install pytest pandas numpy scikit-learn google-generativeai
+
+      - name: Get changed files from PR
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUM/files?per_page=100" \
+            > pr_files.json
+          jq -r '.[].filename' pr_files.json > changed_files.txt
+
+      # 2️⃣ 驗證檔名規則
+      - name: Validate submission
+        id: validate
+        run: |
+          ERROR_MSG=""
+          while IFS= read -r file; do
+            if [[ "$file" == "README.md" ]]; then
+              ERROR_MSG+="❌ 不可修改 README.md\n"
+            fi
+            if [[ "$file" == "template.py" ]]; then
+              ERROR_MSG+="❌ 不可修改 template.py\n"
+            fi
+          done < changed_files.txt
+
+          NEW_FILES=$(grep "^submit/" changed_files.txt || true)
+          MAIN_FILES=$(echo "$NEW_FILES" | grep -E '^submit/W7_[0-9]{9}\.py$' || true)
+          MAIN_COUNT=$(echo "$MAIN_FILES" | grep -c ".*" || true)
+
+          if [[ $MAIN_COUNT -ne 1 ]]; then
+            ERROR_MSG+="❌ 你必須新增且僅有一個主程式檔 (submit/W7_<學號>.py)\n"
+          fi
+
+          if [[ -n "$ERROR_MSG" ]]; then
+            echo "⚠️ 提交規則檢查未通過" > pr_feedback.md
+            echo -e "$ERROR_MSG" >> pr_feedback.md
+            echo "validate_result=fail" >> $GITHUB_OUTPUT
+          else
+            echo "✅ 提交符合規則" > pr_feedback.md
+            echo "validate_result=pass" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Comment validation result
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-file: pr_feedback.md
+
+      # 3️⃣ 執行 pytest 自動測試
+      - name: Run pytest
+        if: steps.validate.outputs.validate_result == 'pass'
+        run: |
+          mkdir -p test_results
+          pytest tests/test_W7.py --disable-warnings -q --tb=short | tee test_results/results.md
+
+      - name: Comment pytest result
+        if: steps.validate.outputs.validate_result == 'pass'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-file: test_results/results.md
+
+      # 4️⃣ AI 程式碼審查（Gemini）
+      - name: Prepare diff for AI review
+        if: steps.validate.outputs.validate_result == 'pass'
+        run: |
+          PR_NUM=${{ github.event.pull_request.number }}
+          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3.diff" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUM.diff" \
+            > pr_diff.txt
+
+      - name: Run Gemini AI Review
+        if: steps.validate.outputs.validate_result == 'pass'
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python3 - <<EOF
+          import os
+          import google.generativeai as genai
+          genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+          diff = open("pr_diff.txt", encoding="utf-8").read()
+          prompt = f"""你是一位 Python 課程助教。
+          以下是學生在 Titanic 資料前處理作業的修改內容。
+          請提供簡短的 Code Review：
+
+          ### 優點
+          - 最多 2 點
+
+          ### 改進建議
+          - 每檔案最多 3 條
+          - 格式: - [行號] 問題與建議
+
+          ### 程式品質分數
+          - 請給 0~10 分 (僅數字)
+
+          修改內容如下：
+          {diff}
+          """
+          model = genai.GenerativeModel("gemini-2.0-flash")
+          res = model.generate_content(prompt)
+          text = getattr(res, "text", str(res))
+          with open("review_result.md", "w", encoding="utf-8") as f:
+              f.write(text)
+          EOF
+
+      - name: Comment AI review result
+        if: steps.validate.outputs.validate_result == 'pass'
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body-file: review_result.md
