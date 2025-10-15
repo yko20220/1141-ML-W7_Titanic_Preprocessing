@@ -11,8 +11,9 @@ from sklearn.model_selection import train_test_split
 # 任務 1：載入資料
 def load_data(file_path):
     # TODO 1.1: 讀取 CSV
-    # TODO 1.2: 回傳資料與缺失值總數
+    # TODO 1.2: 統一欄位首字母大寫，並計算缺失值數量
     df = None
+    df.columns = [c.capitalize() for c in df.columns]
     missing_count = None
     return df, int(missing_count)
 
@@ -50,7 +51,7 @@ def scale_features(df):
 def split_data(df):
     # TODO 6.1: 將 Survived 作為 y，其餘為 X
     # TODO 6.2: 使用 train_test_split 切割 (test_size=0.2, random_state=42)
-    X_train, X_test, y_train, y_test = None, None, None, None
+    X_train, X_test, y_train, y_test = None
     return X_train, X_test, y_train, y_test
 
 
