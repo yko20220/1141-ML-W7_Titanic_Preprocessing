@@ -81,12 +81,19 @@ jobs:
           echo "=== Repository structure ==="
           ls -R
 
-      # 4️⃣ 執行 pytest 自動測試
+      # 4️⃣ 執行 pytest 自動測試（乾淨輸出）
       - name: Run pytest
         if: steps.validate.outputs.validate_result == 'pass'
+        env:
+          PYTHONIOENCODING: utf-8
         run: |
           mkdir -p test_results
-          pytest tests/test_W7.py --disable-warnings -q --tb=short | tee test_results/results.md
+          pytest tests/test_W7.py --disable-warnings -q --tb=short
+          if [ -f test_results/results.md ]; then
+            echo "✅ 測試報告已生成"
+          else
+            echo "⚠️ 未找到 results.md，可能測試未正常完成"
+          fi
 
       - name: Comment pytest result
         if: steps.validate.outputs.validate_result == 'pass'
@@ -110,6 +117,7 @@ jobs:
         if: steps.validate.outputs.validate_result == 'pass'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PYTHONIOENCODING: utf-8
         run: |
           python3 - <<EOF
           import os
