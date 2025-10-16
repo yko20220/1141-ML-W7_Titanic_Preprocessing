@@ -49,15 +49,16 @@ def remove_outliers(df):
 # 任務 4：類別變數編碼
 def encode_features(df):
     # TODO 4.1: 使用 pd.get_dummies 對 Sex、Embarked 進行編碼
-    df = pd.get_dummies(df, columns=['Sex', 'Embarked'], drop_first=True)
+    df_encoded = pd.get_dummies(df, columns=['Sex', 'Embarked'], drop_first=False)
 
+    
     required_cols = ['Sex_female', 'Sex_male', 'Embarked_S']
     for col in required_cols:
         if col not in df_encoded.columns:
             df_encoded[col] = 0
-            
-    df_encoded=df
+
     return df_encoded
+
 
 
 # 任務 5：數值標準化
