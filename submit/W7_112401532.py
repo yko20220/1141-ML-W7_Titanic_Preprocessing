@@ -47,7 +47,8 @@ def remove_outliers(df):
 # 任務 4：類別變數編碼
 def encode_features(df):
     # TODO 4.1: 使用 pd.get_dummies 對 Sex、Embarked 進行編碼
-    df_encoded = pd.get_dummies(df, columns=['Sex', 'Embarked'], drop_first=True)
+    df = pd.get_dummies(df, columns=['Sex', 'Embarked'], drop_first=True)
+    df_encoded=df
     return df_encoded
 
 
@@ -64,7 +65,7 @@ def scale_features(df):
 def split_data(df):
     # TODO 6.1: 將 Survived 作為 y，其餘為 X
     X = df.drop('Survied', axis=1)
-    y = df['Survied']
+    y = df['Survived']
     # TODO 6.2: 使用 train_test_split 切割 (test_size=0.2, random_state=42)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2 ,random_state=42)
     return X_train, X_test, y_train, y_test
