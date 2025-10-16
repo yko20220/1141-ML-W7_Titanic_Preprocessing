@@ -32,14 +32,16 @@ def remove_outliers(df):
     # TODO 3.1: 計算 Fare 平均與標準差
     mean = df['Fare'].mean()
     std = df['Fare'].std()
-    x = mean + 3 * std
+    upper = mean + 3*std
+    lower = mean -3*std
 
     # TODO 3.2: 使用 while 迴圈移除 Fare > x 的資料
-    while (df['Fare'] > x).any():
-        idx = df[df['Fare'] > x].index[0]
-        
-        df.drop(index=idx, inplace=True)
-
+    while df[(df['Fare'] > upper) | (df['Fare'] < lower)].shape[0] >0:
+        df=df[(df["Fare"]<=upper) &(df['Fare']>-lower)].reset_index(drop=True)
+        df_mean=df['Fare'].mean()
+        df_std=df['Fare'].std()
+        upper = mean + 3*std
+        lower = mean -3*std
     return df
 
 
