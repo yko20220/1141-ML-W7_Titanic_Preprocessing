@@ -73,12 +73,13 @@ def scale_features(df):
 # 任務 6：資料切割
 def split_data(df):
     # TODO 6.1: 將 Survived 作為 y，其餘為 X
+    
     X = df.drop('Survived', axis=1)
     y = df['Survived']
+    
     # TODO 6.2: 使用 train_test_split 切割 (test_size=0.2, random_state=42)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2 ,random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     return X_train, X_test, y_train, y_test
-
 
 # 任務 7：輸出結果
 def save_data(df, output_path):
