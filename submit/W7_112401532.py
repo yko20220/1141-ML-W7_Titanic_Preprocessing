@@ -36,12 +36,12 @@ def remove_outliers(df):
     lower = mean -3*std
 
     # TODO 3.2: 使用 while 迴圈移除 Fare > x 的資料
-    while df[(df['Fare'] > upper) | (df['Fare'] < lower)].shape[0] >0:
-        df=df[(df["Fare"]<=upper) &(df['Fare']>-lower)].reset_index(drop=True)
-        df_mean=df['Fare'].mean()
-        df_std=df['Fare'].std()
-        upper = mean + 3*std
-        lower = mean -3*std
+    while df[(df['Fare'] > upper) | (df['Fare'] < lower)].shape[0] > 0:
+        df = df[(df['Fare'] <= upper) & (df['Fare'] >= lower)].reset_index(drop=True)
+        mean = df['Fare'].mean()
+        std = df['Fare'].std()
+        upper = mean + 3 * std
+        lower = mean - 3 * std
     return df
 
 
@@ -49,14 +49,8 @@ def remove_outliers(df):
 # 任務 4：類別變數編碼
 def encode_features(df):
     # TODO 4.1: 使用 pd.get_dummies 對 Sex、Embarked 進行編碼
-    df_encoded = pd.get_dummies(df, columns=['Sex', 'Embarked'], drop_first=False)
-
-    
-    required_cols = ['Sex_female', 'Sex_male', 'Embarked_S']
-    for col in required_cols:
-        if col not in df_encoded.columns:
-            df_encoded[col] = 0
-
+    df = pd.get_dummies(df, columns=['Sex', 'Embarked'], drop_first=True)
+    df_encoded=df
     return df_encoded
 
 
